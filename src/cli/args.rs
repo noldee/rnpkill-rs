@@ -1,14 +1,16 @@
-//! Argumentos del CLI (clap).
+//! Command-line argument definitions.
+
+use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(
     name = "rnpkill-rs",
     version,
     about = "Clean your dev folders, fast.",
-    long_about = None
+    long_about = "A modern alternative to npkill, written in Rust.\n\
+                  Finds and deletes node_modules, venvs, and other heavy dev folders."
 )]
 pub struct Args {
     /// Root directory to scan
@@ -41,6 +43,9 @@ pub struct Args {
 
     #[command(subcommand)]
     pub command: Option<Command>,
+
+    #[arg(long)]
+    pub include_generic: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -50,5 +55,8 @@ pub enum Command {
     /// Show aggregate statistics
     Stats,
     /// Export the full cleanup history to CSV
-    ExportHistory { path: PathBuf },
+    ExportHistory {
+        /// Destination CSV file
+        path: PathBuf,
+    },
 }

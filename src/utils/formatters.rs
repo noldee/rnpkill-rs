@@ -1,5 +1,7 @@
 //! Byte formatting helpers.
 
+use std::time::Duration;
+
 const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB", "PB"];
 
 /// Formats a byte count into a human-readable string like `1.24 GB`.
@@ -20,6 +22,21 @@ pub fn format_bytes(bytes: u64) -> String {
         format!("{} {}", bytes, UNITS[unit])
     } else {
         format!("{:.2} {}", size, UNITS[unit])
+    }
+}
+
+/// Formatea una duración en algo legible: `340ms`, `1.2s`, `2m 05s`.
+pub fn format_duration(d: Duration) -> String {
+    let millis = d.as_millis();
+    if millis < 1000 {
+        format!("{millis}ms")
+    } else {
+        let secs = d.as_secs();
+        if secs < 60 {
+            format!("{:.1}s", d.as_secs_f64())
+        } else {
+            format!("{}m {:02}s", secs / 60, secs % 60)
+        }
     }
 }
 
