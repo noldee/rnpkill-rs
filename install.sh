@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
 
 REPO="noldee/rnpkill-rs"
 BIN_NAME="rnpkill-rs"
@@ -21,15 +21,20 @@ case "$arch" in
 esac
 
 target="${arch_tag}-${os_tag}"
-
-# macOS x86_64 no tiene build aarch64 nativo listado si no lo agregaste al matrix,
-# ajusta aquí si sumas más targets.
 asset="${BIN_NAME}-${target}.tar.gz"
 url="https://github.com/${REPO}/releases/latest/download/${asset}"
 
 echo "⬇️  Descargando ${asset}..."
 tmp_dir="$(mktemp -d)"
-curl -fsSL "$url" -o "${tmp_dir}/${asset}"
+
+if command -v curl >/dev/null 2>&1; then
+  curl -fsSL "$url" -o "${tmp_dir}/${asset}"
+elif command -v wget >/dev/null 2>&1; then
+  wget -q "$url" -O "${tmp_dir}/${asset}"
+else
+  echo "Necesitas curl o wget instalado para continuar." >&2
+  exit 1
+fi
 
 echo "📦 Extrayendo..."
 tar xzf "${tmp_dir}/${asset}" -C "${tmp_dir}"
