@@ -11,10 +11,13 @@ use crossterm::{
     terminal::{Clear, ClearType},
 };
 
-use crate::tui::selector::{RowStatus, Selector};
 use crate::utils::formatters::format_bytes;
-
-pub fn draw_frame<W: Write>(selector: &Selector, stdout: &mut W) -> Result<()> {
+use crate::{
+    tui::selector::{RowStatus, Selector},
+    utils::formatters::format_duration,
+};
+pub fn draw_frame<W: std::io::Write>(selector: &Selector, stdout: &mut W) -> Result<()> {
+    write_summary(selector, stdout)?;
     write_header(selector, stdout)?;
     for i in 0..selector.targets.len() {
         write_row(selector, stdout, i)?;
@@ -24,13 +27,36 @@ pub fn draw_frame<W: Write>(selector: &Selector, stdout: &mut W) -> Result<()> {
     Ok(())
 }
 
-pub fn redraw<W: Write>(selector: &Selector, stdout: &mut W) -> Result<()> {
+pub fn redraw<W: std::io::Write>(selector: &Selector, stdout: &mut W) -> Result<()> {
     queue!(
         stdout,
         MoveToPreviousLine(selector.frame_lines() as u16),
         MoveToColumn(0)
     )?;
     draw_frame(selector, stdout)
+}
+fn write_summary<W: std::io::Write>(selector: &Selector, stdout: &mut W) -> Result<()> {
+    let theme = selector.theme();
+    let remaining = selector.total_bytes.saturating_sub(selector.total_freed);
+
+    queue!(stdout, Clear(ClearType::CurrentLine), MoveToColumn(0))?;
+    queue!(
+        stdout,
+        SetForegroundColor(theme.help),
+        Print(format!(
+            "  size total: {}   ·   scan time: {}\n",
+            format_bytes(remaining),
+            format_duration(selector.scan_time),
+        )),
+        ResetColor,
+    )?;
+    queue!(
+        stdout,
+        Clear(ClearType::CurrentLine),
+        MoveToColumn(0),
+        Print("\n")
+    )?;
+    Ok(())
 }
 
 fn write_header<W: Write>(selector: &Selector, stdout: &mut W) -> Result<()> {

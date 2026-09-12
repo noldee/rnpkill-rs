@@ -32,7 +32,6 @@ impl App {
     /// Corre el TUI interactivo y devuelve los targets que se borraron.
     pub fn run(self) -> Result<Vec<Target>> {
         let mut stdout = io::stdout();
-        let total_bytes: u64 = self.targets.iter().map(|t| t.size_bytes).sum();
 
         terminal::enable_raw_mode()?;
         execute!(
@@ -42,10 +41,10 @@ impl App {
             Clear(ClearType::All),
             cursor::MoveTo(0, 0),
         )?;
-        banner::render(&mut stdout, &self.theme)?;
-        banner::render_summary(&mut stdout, total_bytes, self.scan_time, &self.theme)?;
 
-        let selector = Selector::with_theme(&self.targets, self.theme);
+        banner::render(&mut stdout, &self.theme)?;
+
+        let selector = Selector::with_theme(&self.targets, self.theme, self.scan_time);
         let result = selector.run(&mut stdout);
 
         execute!(stdout, cursor::Show, LeaveAlternateScreen)?;

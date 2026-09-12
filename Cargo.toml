@@ -23,6 +23,7 @@ chrono = "0.4"
 directories = "5.0"
 dirs = "7.0.0"
 crossterm = "0.29.0"
+self_update = { version = "0.41", features = ["archive-tar", "archive-zip", "compression-flate2"] }
 
 [profile.release]
 opt-level = "z"

@@ -59,4 +59,6 @@ pub enum Command {
         /// Destination CSV file
         path: PathBuf,
     },
+    /// Download and install the latest release
+    Upgrade,
 }

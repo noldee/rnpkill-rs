@@ -2,6 +2,7 @@
 //! El dibujo vive en `renderer`, el mapeo de teclas en `keybindings`.
 
 use std::io::Write;
+use std::time::Duration;
 
 use anyhow::Result;
 use crossterm::event::{self, Event, KeyEvent};
@@ -27,35 +28,31 @@ pub struct Selector<'a> {
     pub(crate) marked: Vec<bool>,
     pub(crate) status: Vec<RowStatus>,
     pub(crate) total_freed: u64,
+    pub(crate) total_bytes: u64,
+    pub(crate) scan_time: Duration,
     frame_lines: usize,
     theme: Theme,
 }
 
 impl<'a> Selector<'a> {
-    pub fn with_theme(targets: &'a [Target], theme: Theme) -> Self {
-        let n = targets.len();
-        Self {
-            targets,
-            cursor: 0,
-            marked: vec![false; n],
-            status: vec![RowStatus::Idle; n],
-            total_freed: 0,
-            frame_lines: n + 2,
-            theme,
-        }
+    pub fn new(targets: &'a [Target], scan_time: Duration) -> Self {
+        Self::with_theme(targets, Theme::default(), scan_time)
     }
-    pub fn new(targets: &'a [Target]) -> Self {
-        let n = targets.len();
 
+    pub fn with_theme(targets: &'a [Target], theme: Theme, scan_time: Duration) -> Self {
+        let n = targets.len();
+        let total_bytes: u64 = targets.iter().map(|t| t.size_bytes).sum();
         Self {
             targets,
             cursor: 0,
             marked: vec![false; n],
             status: vec![RowStatus::Idle; n],
             total_freed: 0,
-            // header (1) + rows (n) + help (1)
-            frame_lines: n + 2,
-            theme: Theme::default(),
+            total_bytes,
+            scan_time,
+            // summary (2 líneas) + header (1) + rows (n) + help (1)
+            frame_lines: n + 4,
+            theme,
         }
     }
 

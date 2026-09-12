@@ -29,6 +29,7 @@ pub fn dispatch(args: Args) -> Result<()> {
                 println!("TODO: export history to {} (Phase 4)", path.display());
                 Ok(())
             }
+            Command::Upgrade => crate::cli::upgrade::run(),
         };
     }
 
@@ -45,7 +46,6 @@ fn run_scan(args: Args) -> Result<()> {
 
     let scan_started = Instant::now();
 
-    // ─── Scan ──────────────────────────────────────────────────
     let scanner = Scanner::with_options(args.max_depth, args.include_generic);
     let projects = scanner.scan(&root).context("Failed to scan directory")?;
 
@@ -56,7 +56,6 @@ fn run_scan(args: Args) -> Result<()> {
         return Ok(());
     }
 
-    // ─── Age filter ────────────────────────────────────────────
     if let Some(expr) = &args.older_than {
         let filter = AgeFilter::from_expression(Some(expr))?;
         let before = targets.len();
@@ -73,7 +72,6 @@ fn run_scan(args: Args) -> Result<()> {
         return Ok(());
     }
 
-    // ─── Measure sizes (skipped with --no-size) ────────────────
     if !args.no_size {
         let paths: Vec<_> = targets.iter().map(|t| t.path.clone()).collect();
         let sizes = measure_many(&paths);
@@ -84,39 +82,45 @@ fn run_scan(args: Args) -> Result<()> {
 
     let scan_time = scan_started.elapsed();
 
-    // ─── Sort and display ──────────────────────────────────────
     targets.sort_by(|a, b| b.size_bytes.cmp(&a.size_bytes));
-
     let total: u64 = targets.iter().map(|t| t.size_bytes).sum();
 
-    for (i, t) in targets.iter().enumerate() {
+    // ─── Salida en consola ──────────────────────────────────────
+    // El listado completo solo se imprime en dry-run, donde es la
+    // única salida. En modo interactivo, la TUI ya lo muestra —
+    // duplicarlo en la consola plana es ruido.
+    if args.dry_run {
+        for (i, t) in targets.iter().enumerate() {
+            println!(
+                "  [{:>2}] {:>10}   {}",
+                i,
+                format_bytes(t.size_bytes),
+                t.path.display()
+            );
+        }
         println!(
-            "  [{:>2}] {:>10}   {}",
-            i,
-            format_bytes(t.size_bytes),
-            t.path.display()
+            "\nTotal: {} · {} folder(s)",
+            format_bytes(total),
+            targets.len()
+        );
+    } else {
+        println!(
+            "Found {} folder(s) · {}",
+            targets.len(),
+            format_bytes(total)
         );
     }
 
-    println!(
-        "\nTotal: {} · {} folder(s)",
-        format_bytes(total),
-        targets.len()
-    );
-
-    // ─── Optional report ───────────────────────────────────────
     if let Some(report_path) = &args.report {
         write_report(&targets, report_path)?;
         println!("\n📄 Report saved: {}", report_path.display());
     }
 
-    // ─── Dry-run: show only, do not delete ─────────────────────
     if args.dry_run {
         println!("\n[DRY RUN] No folders were deleted.");
         return Ok(());
     }
 
-    // ─── Interactive delete ────────────────────────────────────
     interactive_delete(targets, scan_time, &args.theme)
 }
 
