@@ -99,7 +99,15 @@ fn write_row<W: Write>(selector: &Selector, stdout: &mut W, i: usize) -> Result<
     let is_cursor = i == selector.cursor;
     let status = selector.status[i];
 
-    let pointer = if is_cursor { "❯" } else { " " };
+    let pointer = if is_cursor {
+        if crate::utils::term::supports_unicode_glyphs() {
+            "❯"
+        } else {
+            ">"
+        }
+    } else {
+        " "
+    };
     let size = format_bytes(t.size_bytes);
     let age = match t.mtime {
         Some(mtime) => human_age(mtime),

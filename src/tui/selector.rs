@@ -5,7 +5,7 @@ use std::io::Write;
 use std::time::Duration;
 
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyEvent};
+use crossterm::event::{self, Event, KeyEvent, KeyEventKind};
 
 use crate::core::deleter::delete_target;
 use crate::core::models::Target;
@@ -75,9 +75,15 @@ impl<'a> Selector<'a> {
     fn event_loop<W: Write>(&mut self, stdout: &mut W) -> Result<Vec<Target>> {
         loop {
             if let Event::Key(KeyEvent {
-                code, modifiers, ..
+                code,
+                modifiers,
+                kind,
+                ..
             }) = event::read()?
             {
+                if kind != KeyEventKind::Press {
+                    continue;
+                }
                 match map_key(code, modifiers) {
                     Action::Up => {
                         if self.cursor > 0 {

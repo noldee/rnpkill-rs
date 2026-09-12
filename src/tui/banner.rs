@@ -22,19 +22,30 @@ pub const BANNER: &str = r"
 ██║  ██║██║ ╚████║██║     ██║  ██╗██║███████╗███████╗
 ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝╚══════╝
 ";
+pub const BANNER_PLAIN: &str = r"
+ ____  _   _ ____  _  ___ _     _
+|  _ \| \ | |  _ \| |/ / |_| |   | |
+| |_) |  \| | |_) | ' /   | |   | |
+|  _ <| |\  |  __/| . \   | |___| |___
+|_| \_\_| \_|_|   |_|\_\  |_____|_____|
+";
 
 /// Renders the banner using the given theme's `banner` color.
 pub fn render<W: Write>(stdout: &mut W, theme: &Theme) -> Result<()> {
+    let art = if crate::utils::term::supports_unicode_glyphs() {
+        BANNER
+    } else {
+        BANNER_PLAIN
+    };
+
     queue!(
         stdout,
         SetForegroundColor(theme.banner),
-        SetAttribute(Attribute::Bold),
+        SetAttribute(Attribute::Bold)
     )?;
-
-    for line in BANNER.lines() {
+    for line in art.lines() {
         queue!(stdout, MoveToColumn(0), Print(line), Print("\n"))?;
     }
-
     queue!(stdout, ResetColor, SetAttribute(Attribute::Reset))?;
     stdout.flush()?;
     Ok(())

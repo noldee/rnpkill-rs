@@ -40,6 +40,12 @@ pub fn format_duration(d: Duration) -> String {
     }
 }
 
+/// Quita el prefijo `\\?\` de Windows solo para mostrar en pantalla.
+pub fn display_path(path: &std::path::Path) -> String {
+    let s = path.display().to_string();
+    s.strip_prefix(r"\\?\").unwrap_or(&s).to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,5 +73,21 @@ mod tests {
     #[test]
     fn formats_gigabytes() {
         assert_eq!(format_bytes(1024 * 1024 * 1024 * 3 / 2), "1.50 GB");
+    }
+
+    #[test]
+    fn strips_windows_extended_prefix() {
+        assert_eq!(
+            display_path(std::path::Path::new(r"\\?\C:\test\node_modules")),
+            r"C:\test\node_modules"
+        );
+    }
+
+    #[test]
+    fn leaves_normal_paths_untouched() {
+        assert_eq!(
+            display_path(std::path::Path::new("/tmp/node_modules")),
+            "/tmp/node_modules"
+        );
     }
 }
