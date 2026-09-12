@@ -1,0 +1,24 @@
+cat > .gitignore <<'EOF'
+# Rust
+/target/
+**/*.rs.bk
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# rnpkill-rs generated
+*.json
+*.csv
+!Cargo.lock
+EOF
+
+# Forzar que Cargo.lock se incluya (es buena práctica para binarios)
+git add -f Cargo.lock 2>/dev/null || true
